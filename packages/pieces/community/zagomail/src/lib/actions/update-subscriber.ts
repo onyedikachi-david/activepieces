@@ -14,10 +14,47 @@ export const updateSubscriberAction = createAction({
     displayName: 'Update Subscriber',
     description: 'Updates an existing subscriber in a list.',
     props: {
-        list_uid: Property.ShortText({
-            displayName: 'List UID',
-            description: 'The UID of the list where the subscriber exists.',
+        list_uid: Property.Dropdown({
+            displayName: 'List',
+            description: 'The list where the subscriber exists.',
             required: true,
+            refreshers: ['auth'],
+            options: async ({ auth }) => {
+                if (!auth) {
+                    return {
+                        disabled: true,
+                        placeholder: 'Please authenticate first',
+                        options: [],
+                    };
+                }
+                try {
+                    const client = makeZagomailClient(auth as any); // auth will be PopulatedDynamicPropsValue<typeof zagomailAuth>
+                    const lists = await client.getAllLists();
+                    if (lists.length === 0) {
+                        return {
+                            disabled: true,
+                            placeholder: 'No lists found in your account.',
+                            options: [],
+                        };
+                    }
+                    return {
+                        disabled: false,
+                        options: lists.map(list => ({
+                            label: list.name,
+                            value: list.uid,
+                        })),
+                    };
+                } catch (error) {
+                    console.error("Failed to load lists for dropdown:", error);
+                    return {
+                        disabled: true,
+                        placeholder: 'Error loading lists. Check console.',
+                        options: [],
+                        // Optionally, pass the error message to the UI if the framework supports it
+                        // errorMessage: error.message
+                    };
+                }
+            }
         }),
         subscriber_uid: Property.ShortText({
             displayName: 'Subscriber UID',

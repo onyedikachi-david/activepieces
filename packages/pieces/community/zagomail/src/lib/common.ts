@@ -118,6 +118,42 @@ export class ZagomailClient {
         return { valid: false, error: `Authentication test failed (get all lists): ${errorMessage}` };
     }
   }
+
+  async getAllLists(): Promise<Array<{ name: string; uid: string }>> {
+    const requestBody = { publicKey: this.getPublicKey() };
+    try {
+      const response = await this.makeRequest<{
+        records?: Array<{
+          general: {
+            list_uid: string;
+            name: string;
+            display_name?: string;
+            description?: string;
+          };
+          // ... other properties we don't need for this method
+        }>;
+        // ... other top-level response properties like count, total_pages etc.
+      }>(
+        HttpMethod.GET,
+        'lists/all-lists',
+        undefined,
+        requestBody
+      );
+
+      if (response.data && Array.isArray(response.data.records)) {
+        return response.data.records.map(record => ({
+          name: record.general.name || record.general.display_name || record.general.list_uid, // Fallback if name is empty
+          uid: record.general.list_uid,
+        }));
+      }
+      return []; // Return empty if no records or unexpected structure
+    } catch (error) {
+      // Log the error or handle it as appropriate for your piece
+      // For now, rethrow to be caught by the calling prop options function
+      console.error("Error fetching Zagomail lists:", error);
+      throw new Error(`Failed to fetch Zagomail lists: ${error instanceof Error ? error.message : JSON.stringify(error)}`);
+    }
+  }
 }
 
 export function makeZagomailClient(auth: ZagomailAuthProps): ZagomailClient {

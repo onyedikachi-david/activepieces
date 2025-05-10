@@ -101,4 +101,8 @@ export const newSubscriberTrigger = createTrigger({
         }
         return [];
     },
+
+    async test(context) {
+        return [this.sampleData];
+    }
 });
