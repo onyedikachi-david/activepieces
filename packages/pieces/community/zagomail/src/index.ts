@@ -11,23 +11,17 @@ import { subscriberUnsubscribedTrigger } from './lib/triggers/subscriber-unsubsc
 import { subscriberTaggedTrigger } from './lib/triggers/subscriber-tagged-trigger';
 
 const markdown = `
-To obtain your Zagomail API URL and Keys, follow these steps:
+To obtain your Zagomail API Keys, follow these steps:
 
 1. Log in to your Zagomail account.
 2. Go to **Account > API**.
-3. Click on **API URL** to get your API URL.
-4. Click on **Generate new keys** to get your Public Key and Private Key.
-5. Click on **Save changes**.
+3. Click on **Generate new keys** to get your Public Key and Private Key.
+4. Click on **Save changes**.
 `;
 
 export const zagomailAuth = PieceAuth.CustomAuth({
   description: markdown,
   props: {
-    apiUrl: Property.ShortText({
-      displayName: 'API URL',
-      description: 'The API URL of your Zagomail instance (e.g., https://app.zagomail.com/api/v1)',
-      required: true,
-    }),
     publicKey: Property.ShortText({
       displayName: 'Public Key',
       description: 'Your Zagomail Public Key',
@@ -47,7 +41,7 @@ export const zagomailAuth = PieceAuth.CustomAuth({
     } else {
       return {
         valid: false,
-        error: testAuthResponse.error || 'Authentication failed. Please check your credentials and API URL.',
+        error: testAuthResponse.error || 'Authentication failed. Please check your credentials.',
       };
     }
   },

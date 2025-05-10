@@ -12,12 +12,12 @@ export interface ZagomailApiResponse<T = unknown> {
 }
 
 export class ZagomailClient {
-  private API_URL: string;
+  private readonly API_URL = 'https://api.zagomail.com';
   private PUBLIC_KEY: string;
   // privateKey is part of auth but not used in these data plane calls as per current understanding
 
   constructor(auth: ZagomailAuthProps) {
-    this.API_URL = auth.apiUrl.endsWith('/') ? auth.apiUrl.slice(0, -1) : auth.apiUrl;
+    // this.API_URL = auth.apiUrl.endsWith('/') ? auth.apiUrl.slice(0, -1) : auth.apiUrl;
     this.PUBLIC_KEY = auth.publicKey;
     // this.PRIVATE_KEY = auth.privateKey; // Not used for now
   }
@@ -83,33 +83,39 @@ export class ZagomailClient {
   }
 
   async testAuth(): Promise<{ valid: boolean; error?: string }> {
-    const testListUid = 'ap-test-list-uid';
-    const testSubscriberUid = 'ap-test-subscriber-uid';
-    const requestBody = { publicKey: this.PUBLIC_KEY };
+    // Using "Get All Lists" endpoint for testing.
+    // Docs: GET /lists/all-lists, body {publicKey}.
+    // Success should be { status: "success", data: { ... } }
+    const requestBody = {
+      publicKey: this.getPublicKey(),
+    };
 
     try {
-      // Attempt to get a non-existent subscriber.
-      // Zagomail returns 200 OK with status: "error" if the subscriber is not found.
-      // makeRequest will throw an error if status is "error". We catch it here.
-      await this.makeRequest(
+      const response = await this.makeRequest<{
+        count?: string | number | null;
+        total_pages?: number | null;
+        current_page?: number | null;
+        records?: unknown[];
+      }>(
         HttpMethod.GET,
-        `lists/get-subscriber?list_uid=${testListUid}&subscriber_uid=${testSubscriberUid}`,
+        'lists/all-lists',
         undefined,
         requestBody
       );
-      // If makeRequest didn't throw, it means status was 'success', which is unexpected for a test subscriber.
-      // However, it means the API is reachable and publicKey is fine for a success response.
-      return { valid: true };
+
+      // If makeRequest returns, it means status was 'success'.
+      // The presence of response.data (even if records array is empty) indicates success.
+      if (response.data) {
+        return { valid: true };
+      }
+      // This case should ideally not be reached if makeRequest ensures status:success means data is present,
+      // or if the API always returns a data object on success for this endpoint.
+      return { valid: false, error: 'Authentication test (get all lists) succeeded but no data object in response.' };
 
     } catch (e) {
-        const errorMessage = e instanceof Error ? e.message : 'Unknown error during authentication test.';
-        // Check if the error is the specific one we expect for a non-existent subscriber
-        if (errorMessage.includes('The subscriber does not exist in this list') ||
-            errorMessage.includes('subscriber not found') /* be a bit flexible */) {
-            return { valid: true }; // This is a successful auth test
-        }
-        // Any other error (network, different API error, malformed URL from apiUrl) means failure
-        return { valid: false, error: `Authentication test failed: ${errorMessage}` };
+        const errorMessage = e instanceof Error ? e.message : 'Unknown error during authentication test (get all lists).';
+        // Any error here (404, 401, 403, specific error messages like "No account found", etc.) is a failure for auth test.
+        return { valid: false, error: `Authentication test failed (get all lists): ${errorMessage}` };
     }
   }
 }
