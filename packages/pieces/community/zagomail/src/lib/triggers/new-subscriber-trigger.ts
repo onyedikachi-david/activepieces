@@ -40,46 +40,33 @@ export const newSubscriberTrigger = createTrigger({
             target_url: context.webhookUrl,
         };
 
-        // Define the expected raw response structure from webhooks/create endpoint
-        type WebhookCreateSuccessResponse = {
-            status: 'success'; // ZagomailClient.makeRequest ensures status is 'success' if it doesn't throw
-            webhook: {
-                id: string;
-                event_type?: string;
-                target_url?: string;
-            };
-            // Other potential top-level fields from Zagomail like 'message' are not strictly typed here
-            // but won't cause issues for accessing 'webhook.id'.
-        };
-
         try {
-            // The generic type for makeRequest<T> refers to the type of the 'data' field in ZagomailApiResponse<T>.
-            // Since the webhooks/create endpoint does not use a 'data' field to wrap the 'webhook' object,
-            // we use <any> here. The 'apiResponse' variable IS the direct JSON response from Zagomail.
-            const apiResponse = await client.makeRequest<any>(
+            const response = await client.makeRequest<{
+                webhook: {
+                    id: string;
+                    event_type?: string;
+                    target_url?: string;
+                };
+            }>(
                 HttpMethod.POST,
                 'webhooks/create',
                 undefined,
                 requestBody
             );
 
-            // Cast the untyped apiResponse to our known specific structure for this endpoint's success response.
-            const specificResponse = apiResponse as unknown as WebhookCreateSuccessResponse;
-
-            if (specificResponse.webhook && specificResponse.webhook.id) {
-                const webhookId = specificResponse.webhook.id;
+            if (response.data && response.data.webhook && response.data.webhook.id) {
+                const webhookId = response.data.webhook.id;
                 await context.store.put('_zagomail_new_subscriber_webhook_id', webhookId);
                 console.log(`Webhook created for new_subscriber_added. ID: ${webhookId}`);
             } else {
-                // This block means makeRequest indicated success, but the expected 'webhook.id' was not found.
-                const errorMsg = "Failed to create Zagomail webhook: The 'webhook' object or its 'id' property was missing in the API response, despite a success status.";
-                console.error(errorMsg, apiResponse); // Log the entire apiResponse for diagnostics
-                // Throw the full response to aid debugging if it reaches the UI or logs.
-                throw new Error(`${errorMsg} Response: ${JSON.stringify(apiResponse)}`);
+                let errorMsg = "Failed to create Zagomail webhook: Webhook ID or webhook object missing in response.data.";
+                if (!response.data) errorMsg = "Failed to create Zagomail webhook: response.data is undefined.";
+                else if (!response.data.webhook) errorMsg = "Failed to create Zagomail webhook: response.data.webhook is undefined.";
+                else if (!response.data.webhook.id) errorMsg = "Failed to create Zagomail webhook: response.data.webhook.id is undefined.";
+                console.error(errorMsg, response.data);
+                throw new Error(errorMsg);
             }
         } catch (error) {
-            // This catches errors from makeRequest (e.g., API returning status:'error', network issues)
-            // or the explicit throw from the 'else' block above.
             console.error("Error creating Zagomail webhook for new_subscriber_added:", error);
             throw new Error(`Error creating Zagomail webhook: ${error instanceof Error ? error.message : JSON.stringify(error)}`);
         }
