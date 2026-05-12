@@ -53,12 +53,12 @@ export const newSubmission = createTrigger({
 
     return [
       {
+        ...answers,
         form_id: body['formID'] ?? null,
         submission_id: body['submissionID'] ?? null,
         ip: body['ip'] ?? null,
         type: body['type'] ?? null,
         pretty: body['pretty'] ?? null,
-        ...answers,
       },
     ];
   },
@@ -91,6 +91,7 @@ function parseAnswers(rawRequest: unknown): Record<string, unknown> {
   for (const field of Object.values(parsed)) {
     if (!field.text) continue;
     const key = toSnakeCase(field.text);
+    if (!key) continue;
     const { answer, prettyFormat } = field;
 
     if (prettyFormat) {
