@@ -140,13 +140,13 @@ export const updateItemAction = createAction({
     if (priority !== null && priority !== undefined) body['priority'] = priority;
     if (due_on) body['due_on'] = due_on;
 
-    const response = await httpClient.sendRequest<{ status: string; item: WeekdoneItem }>({
+    const response = await httpClient.sendRequest<Record<string, unknown>>({
       method: HttpMethod.PATCH,
       url: `https://api.weekdone.com/1/item/${item_id}?token=${token}`,
       body,
     });
 
-    const item = response.body.item;
+    const item = (response.body['item'] ?? response.body['data'] ?? response.body) as WeekdoneItem;
     return {
       id: item.id,
       description: item.description,

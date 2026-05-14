@@ -23,11 +23,12 @@ export const weekdone = createPiece({
     createObjectiveAction,
     updateObjectiveAction,
     createCustomApiCallAction({
-      baseUrl: () => 'https://weekdone.com/api',
+      baseUrl: () => 'https://api.weekdone.com/1',
       auth: weekdoneAuth,
       authMapping: async (auth) => ({
-        Authorization: `Bearer ${(auth as OAuth2PropertyValue).access_token}`,
+        token: (auth as OAuth2PropertyValue).access_token,
       }),
+      authLocation: 'queryParams',
     }),
   ],
   triggers: [newItemTrigger, newObjectiveTrigger],

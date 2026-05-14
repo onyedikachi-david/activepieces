@@ -125,13 +125,14 @@ export const createItemAction = createAction({
     if (is_private !== null && is_private !== undefined) body['private'] = is_private ? 1 : 0;
     if (source_id) body['source_id'] = source_id;
 
-    const response = await httpClient.sendRequest<{ status: string; item: WeekdoneItem }>({
+    const response = await httpClient.sendRequest<Record<string, unknown>>({
       method: HttpMethod.POST,
       url: `https://api.weekdone.com/1/item?token=${token}`,
       body,
     });
 
-    const item = response.body.item;
+    // Weekdone docs don't specify the create response shape; try common keys first.
+    const item = (response.body['item'] ?? response.body['data'] ?? response.body) as WeekdoneItem;
     return {
       id: item.id,
       description: item.description,

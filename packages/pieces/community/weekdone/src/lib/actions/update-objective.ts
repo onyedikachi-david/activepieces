@@ -101,13 +101,13 @@ export const updateObjectiveAction = createAction({
     const { objective_id, description } = context.propsValue;
     const token = context.auth.access_token;
 
-    const response = await httpClient.sendRequest<{ status: string; data: WeekdoneObjective }>({
+    const response = await httpClient.sendRequest<Record<string, unknown>>({
       method: HttpMethod.PATCH,
       url: `https://api.weekdone.com/1/objective/${objective_id}?token=${token}`,
       body: { description },
     });
 
-    const obj = response.body.data;
+    const obj = (response.body['data'] ?? response.body['objective'] ?? response.body) as WeekdoneObjective;
     return {
       id: obj.id,
       type: obj.type,

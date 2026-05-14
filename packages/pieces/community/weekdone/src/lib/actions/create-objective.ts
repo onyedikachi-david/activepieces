@@ -120,13 +120,13 @@ export const createObjectiveAction = createAction({
       body['user_id'] = level_details['user_id'];
     }
 
-    const response = await httpClient.sendRequest<{ status: string; data: WeekdoneObjective }>({
+    const response = await httpClient.sendRequest<Record<string, unknown>>({
       method: HttpMethod.POST,
       url: `https://api.weekdone.com/1/objective?token=${token}`,
       body,
     });
 
-    const obj = response.body.data;
+    const obj = (response.body['data'] ?? response.body['objective'] ?? response.body) as WeekdoneObjective;
     return {
       id: obj.id,
       type: obj.type,
