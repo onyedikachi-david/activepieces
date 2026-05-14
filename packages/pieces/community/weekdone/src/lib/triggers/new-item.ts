@@ -3,7 +3,6 @@ import {
   TriggerStrategy,
   AppConnectionValueForAuthProperty,
   StaticPropsValue,
-  Property,
 } from '@activepieces/pieces-framework';
 import {
   DedupeStrategy,
@@ -13,6 +12,7 @@ import {
   HttpMethod,
 } from '@activepieces/pieces-common';
 import { weekdoneAuth } from '../auth';
+import { weekdoneCommon } from '../common';
 
 type WeekdoneItem = {
   id: number;
@@ -33,16 +33,14 @@ type WeekdoneItem = {
 };
 
 const props = {
-  user_id: Property.ShortText({
-    displayName: 'User ID',
-    description:
-      'Only trigger for items belonging to a specific user. Use "me" for your own items. Leave empty to receive items from all users.',
+  user_id: weekdoneCommon.userDropdown({
+    displayName: 'Filter by User',
+    description: 'Only trigger for items belonging to this user. Leave empty to receive items from all users.',
     required: false,
   }),
-  team_id: Property.Number({
-    displayName: 'Team ID',
-    description:
-      'Only trigger for items added to a specific team. Leave empty to receive items from all teams.',
+  team_id: weekdoneCommon.teamDropdown({
+    displayName: 'Filter by Team',
+    description: 'Only trigger for items added to this team. Leave empty to receive items from all teams.',
     required: false,
   }),
 };
@@ -56,7 +54,9 @@ const polling: Polling<
     const token = auth.access_token;
     const queryParams: Record<string, string> = {};
 
-    if (propsValue.user_id) queryParams['user_id'] = propsValue.user_id;
+    if (propsValue.user_id !== null && propsValue.user_id !== undefined) {
+      queryParams['user_id'] = String(propsValue.user_id);
+    }
     if (propsValue.team_id !== null && propsValue.team_id !== undefined) {
       queryParams['team_id'] = String(propsValue.team_id);
     }

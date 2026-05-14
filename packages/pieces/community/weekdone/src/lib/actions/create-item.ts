@@ -1,6 +1,7 @@
 import { createAction, Property } from '@activepieces/pieces-framework';
 import { httpClient, HttpMethod } from '@activepieces/pieces-common';
 import { weekdoneAuth } from '../auth';
+import { weekdoneCommon } from '../common';
 
 type WeekdoneItem = {
   id: number;
@@ -52,16 +53,14 @@ export const createItemAction = createAction({
         'The report week to add this item to, in YYYYWW format (e.g. "202403" for week 3 of 2024). Leave empty to use the current week.',
       required: false,
     }),
-    user_id: Property.ShortText({
-      displayName: 'User ID',
-      description:
-        'The ID of the user to assign this item to. Use the special value "me" to assign it to yourself. Leave empty to default to your account.',
+    user_id: weekdoneCommon.userDropdown({
+      displayName: 'Assign To',
+      description: 'The user to assign this item to. Leave empty to assign it to yourself.',
       required: false,
     }),
-    team_id: Property.Number({
-      displayName: 'Team ID',
-      description:
-        'The numeric ID of the team to add this item to. Leave empty to use your primary team. You can find team IDs in your Weekdone team settings.',
+    team_id: weekdoneCommon.teamDropdown({
+      displayName: 'Team',
+      description: 'The team to add this item to. Leave empty to use your primary team.',
       required: false,
     }),
     priority: Property.StaticDropdown({

@@ -1,6 +1,7 @@
 import { createAction, Property, DynamicPropsValue } from '@activepieces/pieces-framework';
 import { httpClient, HttpMethod } from '@activepieces/pieces-common';
 import { weekdoneAuth } from '../auth';
+import { weekdoneCommon } from '../common';
 
 type WeekdoneObjective = {
   id: number;
@@ -48,7 +49,7 @@ export const createObjectiveAction = createAction({
       description: 'Additional fields required for the selected objective level.',
       required: true,
       refreshers: ['type'],
-      props: async ({ type }): Promise<DynamicPropsValue> => {
+      props: async ({ auth, type }): Promise<DynamicPropsValue> => {
         if (type === 'department') {
           return {
             department_id: Property.Number({
@@ -60,28 +61,35 @@ export const createObjectiveAction = createAction({
           };
         }
         if (type === 'team') {
+          const token = (auth as { access_token: string }).access_token;
+          const teams = await weekdoneCommon.fetchTeams({ token });
           return {
-            team_id: Property.Number({
-              displayName: 'Team ID',
-              description:
-                'The numeric ID of the team. You can find this in your Weekdone team settings.',
+            team_id: Property.StaticDropdown({
+              displayName: 'Team',
+              description: 'The team this objective belongs to.',
               required: true,
+              options: { options: teams.map((t) => ({ label: t.name, value: t.id })) },
             }),
           };
         }
         if (type === 'user') {
+          const token = (auth as { access_token: string }).access_token;
+          const [teams, users] = await Promise.all([
+            weekdoneCommon.fetchTeams({ token }),
+            weekdoneCommon.fetchUsers({ token }),
+          ]);
           return {
-            team_id: Property.Number({
-              displayName: 'Team ID',
-              description:
-                'The numeric ID of the team this user belongs to. You can find this in your Weekdone team settings.',
+            team_id: Property.StaticDropdown({
+              displayName: 'Team',
+              description: "The user's primary team.",
               required: true,
+              options: { options: teams.map((t) => ({ label: t.name, value: t.id })) },
             }),
-            user_id: Property.ShortText({
-              displayName: 'User ID',
-              description:
-                'The ID of the user this objective belongs to. Use "me" to assign it to yourself.',
+            user_id: Property.StaticDropdown({
+              displayName: 'User',
+              description: 'The user this objective belongs to.',
               required: true,
+              options: { options: users.map((u) => ({ label: u.name, value: u.id })) },
             }),
           };
         }
