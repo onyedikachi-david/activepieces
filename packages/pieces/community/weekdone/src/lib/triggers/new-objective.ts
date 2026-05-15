@@ -19,7 +19,7 @@ type WeekdoneObjective = {
   type: string;
   description: string;
   period: string;
-  comments: number;
+  comments: number | unknown[];
   progress: number;
   results: unknown[];
   parent_list: unknown[];
@@ -73,7 +73,9 @@ const polling: Polling<
     });
 
     const objectives = response.body.data ?? [];
-    return objectives.map((obj) => ({
+    return objectives
+      .sort((a, b) => b.id - a.id)
+      .map((obj) => ({
       id: obj.id,
       data: {
         id: obj.id,
@@ -81,7 +83,7 @@ const polling: Polling<
         description: obj.description,
         period: obj.period,
         progress: obj.progress,
-        comment_count: obj.comments,
+        comment_count: Array.isArray(obj.comments) ? obj.comments.length : (obj.comments ?? 0),
         key_result_count: Array.isArray(obj.results) ? obj.results.length : 0,
         department_id: obj.department_id ?? null,
         team_id: obj.team_id ?? null,

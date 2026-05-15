@@ -7,7 +7,7 @@ type WeekdoneObjective = {
   type: string;
   description: string;
   period: string;
-  comments: number;
+  comments: number | unknown[];
   progress: number;
   results: unknown[];
   parent_list: unknown[];
@@ -114,7 +114,7 @@ export const updateObjectiveAction = createAction({
       description: obj.description,
       period: obj.period,
       progress: obj.progress,
-      comment_count: obj.comments,
+      comment_count: Array.isArray(obj.comments) ? obj.comments.length : (obj.comments ?? 0),
       key_result_count: Array.isArray(obj.results) ? obj.results.length : 0,
       department_id: obj.department_id ?? null,
       team_id: obj.team_id ?? null,
